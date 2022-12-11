@@ -16,3 +16,4 @@
 *.json
 
 export
+/jira-export/
