@@ -24,5 +24,5 @@ func main() {
 		Password: *password,
 	}
 
-	downloader.Download(*exportDir)
+	downloader.Export(*exportDir)
 }
