@@ -77,7 +77,7 @@ func (exporter Exporter) DownloadIssue(id, export string) {
 
 	filename := filepath.Join(dir, id+".doc")
 
-	url := fmt.Sprintf("http://localhost:8080/si/jira.issueviews:issue-word/%s/", id)
+	url := fmt.Sprintf(exporter.BaseUrl+"/si/jira.issueviews:issue-word/%s/", id)
 	byt := exporter.GetBytes(url)
 	err := os.WriteFile(filename, byt, 0755)
 	if err != nil {
