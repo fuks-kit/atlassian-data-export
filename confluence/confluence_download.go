@@ -97,7 +97,9 @@ func (downloader Downloader) GetAttachment(attachment AttachmentResult) (byt []b
 
 func (downloader Downloader) Export(exportDir string) {
 
-	for _, page := range downloader.Content().Results {
+	pages := downloader.Content().Results
+
+	for inx, page := range pages {
 		space := strings.TrimPrefix(page.Expandable.Space, "/rest/api/space/")
 
 		if space == "ADMIN" {
@@ -110,15 +112,18 @@ func (downloader Downloader) Export(exportDir string) {
 			log.Panic(err)
 		}
 
-		log.Printf("%s %s (%s)", space, page.Title, page.Id)
-		pdf := downloader.GetPDF(page.Id)
+		log.Printf("Export: %s %s (%d/%d)", space, page.Id, inx, len(pages))
 
 		title := page.Title
 		title = strings.ReplaceAll(title, ".", "_")
 		title = strings.ReplaceAll(title, "/", "_")
 		title = strings.ReplaceAll(title, "\\", "_")
+		filename := filepath.Join(dir, title+".pdf")
 
-		err := os.WriteFile(filepath.Join(dir, title+".pdf"), pdf, 0766)
+		log.Printf("%s", filename)
+
+		pdf := downloader.GetPDF(page.Id)
+		err := os.WriteFile(filename, pdf, 0766)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -135,9 +140,11 @@ func (downloader Downloader) Export(exportDir string) {
 			attachmentTitle := attachment.Title
 			attachmentTitle = strings.ReplaceAll(attachmentTitle, "/", "_")
 			attachmentTitle = strings.ReplaceAll(attachmentTitle, "\\", "_")
+			attachmentFile := filepath.Join(attachmentsDir, attachmentTitle)
+			log.Printf("%s", attachmentFile)
 
 			byt := downloader.GetAttachment(attachment)
-			err = os.WriteFile(filepath.Join(attachmentsDir, attachmentTitle), byt, 0766)
+			err = os.WriteFile(attachmentFile, byt, 0766)
 			if err != nil {
 				log.Panic(err)
 			}
