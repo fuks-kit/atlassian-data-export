@@ -55,10 +55,10 @@ func (exporter Exporter) DownloadAttachment(attachment IssueAttachment, dir stri
 		log.Panic(err)
 	}
 
-	log.Printf("DownloadAttachment: %s", attachment.Filename)
+	filename := filepath.Join(dir, attachment.Filename)
+	log.Printf("%s", filename)
 
 	byt := exporter.GetBytes(attachment.Content)
-	filename := filepath.Join(dir, attachment.Filename)
 	err := os.WriteFile(filename, byt, 0755)
 	if err != nil {
 		log.Panic(err)
@@ -68,14 +68,13 @@ func (exporter Exporter) DownloadAttachment(attachment IssueAttachment, dir stri
 func (exporter Exporter) DownloadIssue(id, export string) {
 	issue := exporter.GetIssue(id)
 
-	log.Printf("DownloadDoc: %s %s", issue.Fields.Project.Name, id)
-
 	dir := filepath.Join(export, issue.Fields.Project.Name)
 	if err := os.MkdirAll(dir, 0766); err != nil {
 		log.Panic(err)
 	}
 
 	filename := filepath.Join(dir, id+".doc")
+	log.Printf("%s", filename)
 
 	url := fmt.Sprintf(exporter.BaseUrl+"/si/jira.issueviews:issue-word/%s/", id)
 	byt := exporter.GetBytes(url)

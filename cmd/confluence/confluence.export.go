@@ -10,7 +10,7 @@ var (
 	baseUrl   = flag.String("url", "http://localhost:8090", "confluence base url")
 	username  = flag.String("username", "", "confluence username")
 	password  = flag.String("password", "", "confluence password")
-	exportDir = flag.String("exportDir", "export", "export directory")
+	exportDir = flag.String("exportDir", "confluence-export", "export directory")
 )
 
 func main() {
