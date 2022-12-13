@@ -8,7 +8,7 @@ import (
 
 var (
 	baseUrl   = flag.String("url", "http://localhost:8090", "confluence base url")
-	username  = flag.String("username", "", "confluence username")
+	username  = flag.String("username", "admin", "confluence username")
 	password  = flag.String("password", "", "confluence password")
 	exportDir = flag.String("exportDir", "confluence-export", "export directory")
 )
