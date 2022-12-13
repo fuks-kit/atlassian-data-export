@@ -43,8 +43,13 @@ func (downloader Downloader) Content() (results ContentResults) {
 		log.Panic(err)
 	}
 
-	//byt, err := json.MarshalIndent(results, "", "  ")
-	//err = os.WriteFile("out.json", byt, 0755)
+	////byt, err := json.MarshalIndent(results, "", "  ")
+	//byt, err := io.ReadAll(resp.Body)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
+	//
+	//err = os.WriteFile("sample/confluence.content.json", byt, 0755)
 	//if err != nil {
 	//	log.Panic(err)
 	//}

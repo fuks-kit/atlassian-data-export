@@ -15,7 +15,7 @@
 # vendor/
 
 sample/
-export/
 jira-export/
+confluence-export/
 
 jira.issues.json
