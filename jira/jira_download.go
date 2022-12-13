@@ -27,7 +27,7 @@ func (exporter Exporter) GetIssueIds() (issuesIds []string) {
 		}
 
 		for _, issue := range results.Issues {
-			issuesIds = append(issuesIds, issue.Id)
+			issuesIds = append(issuesIds, issue.Key)
 		}
 
 		if results.Total <= results.StartAt+results.MaxResults {
@@ -45,7 +45,7 @@ func (exporter Exporter) GetIssue(id string) (issue Issue) {
 	//
 
 	log.Printf("GetIssue: %s", id)
-	exporter.GetMarshal("http://localhost:8080/rest/api/2/issue/"+id, &issue)
+	exporter.GetMarshal(exporter.BaseUrl+"/rest/api/2/issue/"+id, &issue)
 
 	return
 }
@@ -90,12 +90,10 @@ func (exporter Exporter) DownloadIssue(id, export string) {
 	}
 }
 
-func (exporter Exporter) Export(exportDir string) {
-	issues := exporter.GetIssueIds()
-	log.Printf("issues=%d", len(issues))
-	common.WriteJSON("issues.all.json", issues)
-
-	for _, id := range issues {
+func (exporter Exporter) ExportAll(issuesIds []string, exportDir string) {
+	log.Printf("issues=%d", len(issuesIds))
+	for inx, id := range issuesIds {
+		log.Printf("Export issue %s (%d/%d)", id, inx, len(issuesIds))
 		exporter.DownloadIssue(id, exportDir)
 	}
 }
