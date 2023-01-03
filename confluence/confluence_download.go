@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,8 +19,8 @@ type Downloader struct {
 	Password string
 }
 
-func (downloader Downloader) request(url string) (resp *http.Response) {
-	req, err := http.NewRequest("GET", url, nil)
+func (downloader Downloader) request(src *url.URL) (resp *http.Response) {
+	req, err := http.NewRequest("GET", src.String(), nil)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -35,7 +36,16 @@ func (downloader Downloader) request(url string) (resp *http.Response) {
 	return resp
 }
 
-func (downloader Downloader) Content() (pages []ContentResult) {
+func (downloader Downloader) GetMarshall(src *url.URL, obj any) {
+	resp := downloader.request(src)
+	if err := json.NewDecoder(resp.Body).Decode(&obj); err != nil {
+		log.Panic(err)
+	}
+}
+
+func (downloader Downloader) FetchList(apiUrl *url.URL) (pages []ContentResult) {
+
+	apiUrl.Query().Set("limit", "200")
 
 	var results ContentResults
 
@@ -43,8 +53,7 @@ func (downloader Downloader) Content() (pages []ContentResult) {
 		startAt := results.Start + results.Limit
 		log.Printf("Scrape: startAt=%d", startAt)
 
-		apiUrl := fmt.Sprintf("%s/rest/api/content?type=page&start=%d&limit=100",
-			downloader.BaseUrl, startAt)
+		apiUrl.Query().Set("start", fmt.Sprint(startAt))
 		resp := downloader.request(apiUrl)
 		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
 			log.Panic(err)
@@ -60,9 +69,15 @@ func (downloader Downloader) Content() (pages []ContentResult) {
 	return
 }
 
+func (downloader Downloader) Content() (pages []ContentResult) {
+	apiUrl, _ := url.Parse(downloader.BaseUrl + "/rest/api/content?type=page")
+	return downloader.FetchList(apiUrl)
+}
+
 func (downloader Downloader) GetPDF(pageId string) (byt []byte) {
 
-	apiUrl := downloader.BaseUrl + "/spaces/flyingpdf/pdfpageexport.action?pageId=" + pageId
+	apiUrl, _ := url.Parse(downloader.BaseUrl + "/spaces/flyingpdf/pdfpageexport.action")
+	apiUrl.Query().Set("pageId", pageId)
 	resp := downloader.request(apiUrl)
 
 	byt, err := io.ReadAll(resp.Body)
@@ -75,7 +90,7 @@ func (downloader Downloader) GetPDF(pageId string) (byt []byte) {
 
 func (downloader Downloader) GetAttachments(pageId string) (results AttachmentResults) {
 
-	apiUrl := downloader.BaseUrl + "/rest/api/content/" + pageId + "/child/attachment"
+	apiUrl, _ := url.Parse(downloader.BaseUrl + "/rest/api/content/" + pageId + "/child/attachment")
 	resp := downloader.request(apiUrl)
 
 	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
@@ -88,7 +103,7 @@ func (downloader Downloader) GetAttachments(pageId string) (results AttachmentRe
 func (downloader Downloader) GetAttachment(attachment AttachmentResult) (byt []byte) {
 
 	// http://localhost:8090/download/attachments/3834128/Freigaben%20bei%20fuks.pptx?api=v2
-	apiUrl := downloader.BaseUrl + attachment.Links.Download
+	apiUrl, _ := url.Parse(downloader.BaseUrl + attachment.Links.Download)
 	resp := downloader.request(apiUrl)
 
 	if resp.StatusCode != 200 {
