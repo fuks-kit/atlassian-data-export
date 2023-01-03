@@ -3,6 +3,7 @@ package confluence
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -34,25 +35,27 @@ func (downloader Downloader) request(url string) (resp *http.Response) {
 	return resp
 }
 
-func (downloader Downloader) Content() (results ContentResults) {
+func (downloader Downloader) Content() (pages []ContentResult) {
 
-	apiUrl := downloader.BaseUrl + "/rest/api/content?type=page&start=0&limit=99999"
-	resp := downloader.request(apiUrl)
+	var results ContentResults
 
-	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
-		log.Panic(err)
+	for {
+		startAt := results.Start + results.Limit
+		log.Printf("Scrape: startAt=%d", startAt)
+
+		apiUrl := fmt.Sprintf("%s/rest/api/content?type=page&start=%d&limit=100",
+			downloader.BaseUrl, startAt)
+		resp := downloader.request(apiUrl)
+		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+			log.Panic(err)
+		}
+
+		pages = append(pages, results.Results...)
+
+		if results.Size < results.Limit {
+			break
+		}
 	}
-
-	////byt, err := json.MarshalIndent(results, "", "  ")
-	//byt, err := io.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.Panic(err)
-	//}
-	//
-	//err = os.WriteFile("sample/confluence.content.json", byt, 0755)
-	//if err != nil {
-	//	log.Panic(err)
-	//}
 
 	return
 }
@@ -102,7 +105,7 @@ func (downloader Downloader) GetAttachment(attachment AttachmentResult) (byt []b
 
 func (downloader Downloader) Export(exportDir string) {
 
-	pages := downloader.Content().Results
+	pages := downloader.Content()
 
 	for inx, page := range pages {
 		space := strings.TrimPrefix(page.Expandable.Space, "/rest/api/space/")
