@@ -176,7 +176,7 @@ func (downloader Downloader) Export(exportDir string) {
 		title = strings.ReplaceAll(title, "\\", "_")
 		filename := filepath.Join(dir, title+".pdf")
 
-		log.Printf("(%d/%d) [page.Id=%s] %s", inx, len(pages), page.Id, filename)
+		log.Printf("(%d/%d) [page.Id=%s] %s", inx+1, len(pages), page.Id, filename)
 
 		pdf := downloader.GetPDF(page.Id)
 		err := os.WriteFile(filename, pdf, 0766)
