@@ -20,3 +20,4 @@ confluence-export/
 
 jira.issues.json
 confluence.pagePathIndex.json
+confluence.csv
