@@ -162,6 +162,12 @@ func (downloader Downloader) Export(exportDir string) {
 	log.Printf("Export Confluence data")
 
 	for inx, page := range pages {
+
+		if page.Id == "6621229" {
+			log.Printf("############# Skip page %s --> %s", page.Id, page.Links.Webui)
+			continue
+		}
+
 		space := strings.TrimPrefix(page.Expandable.Space, "/rest/api/space/")
 
 		dir := filepath.Join(exportDir, space, pathIndex.Filepath(page.Id))
@@ -175,7 +181,7 @@ func (downloader Downloader) Export(exportDir string) {
 		title = strings.ReplaceAll(title, "\\", "_")
 		filename := filepath.Join(dir, title+".pdf")
 
-		log.Printf("(%d/%d) [page.Id=%s] %s", inx+1, len(pages), page.Id, filename)
+		log.Printf("(%d/%d) [page.Id=%s] %s", inx+1, len(pages), page.Id, title)
 
 		pdf := downloader.GetPDF(page.Id)
 		err := os.WriteFile(filename, pdf, 0766)
@@ -185,7 +191,7 @@ func (downloader Downloader) Export(exportDir string) {
 
 		attachments := downloader.GetAttachments(page.Id)
 		for _, attachment := range attachments.Results {
-			log.Println("\t", attachment.Title)
+			// log.Println("\t", attachment.Title)
 
 			attachmentsDir := filepath.Join(dir, title+"_attachments")
 			if err = os.MkdirAll(attachmentsDir, 0766); err != nil {
