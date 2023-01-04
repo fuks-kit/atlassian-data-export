@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/fuks-kit/atlassian-data-export/common"
 	"io"
 	"log"
 	"net/http"
@@ -45,15 +46,19 @@ func (downloader Downloader) GetMarshall(src *url.URL, obj any) {
 
 func (downloader Downloader) FetchList(apiUrl *url.URL) (pages []ContentResult) {
 
-	apiUrl.Query().Set("limit", "200")
+	query := apiUrl.Query()
+	query.Set("limit", "200")
+	query.Set("start", "0")
 
 	var results ContentResults
 
 	for {
 		startAt := results.Start + results.Limit
-		log.Printf("Scrape: startAt=%d", startAt)
+		query.Set("start", fmt.Sprint(startAt))
+		apiUrl.RawQuery = query.Encode()
 
-		apiUrl.Query().Set("start", fmt.Sprint(startAt))
+		// log.Printf("Scrape: apiUrl=%s", apiUrl.String())
+
 		resp := downloader.request(apiUrl)
 		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
 			log.Panic(err)
@@ -86,6 +91,11 @@ func (downloader Downloader) GetPDF(pageId string) (byt []byte) {
 	}
 
 	return byt
+}
+
+func (downloader Downloader) GetChildPages(pageId string) (childPages []ContentResult) {
+	apiUrl, _ := url.Parse(downloader.BaseUrl + "/rest/api/content/" + pageId + "/child/page")
+	return downloader.FetchList(apiUrl)
 }
 
 func (downloader Downloader) GetAttachments(pageId string) (results AttachmentResults) {
@@ -122,6 +132,32 @@ func (downloader Downloader) Export(exportDir string) {
 
 	pages := downloader.Content()
 
+	//
+	// Build Confluence Wiki Structure
+	//
+
+	log.Printf("Building Confluence page structure")
+
+	pathIndex, ok := PagePathIndexFromCache()
+	if !ok {
+		pathIndex = NewPagePathIndex()
+		for _, parent := range pages {
+			pathIndex.AddPage(parent)
+			children := downloader.GetChildPages(parent.Id)
+			for _, child := range children {
+				pathIndex.AddParent(parent, child)
+			}
+		}
+
+		common.WriteJSON(pagePathCacheFile, pathIndex)
+	}
+
+	//
+	// Download Content
+	//
+
+	log.Printf("Export Confluence data")
+
 	for inx, page := range pages {
 		space := strings.TrimPrefix(page.Expandable.Space, "/rest/api/space/")
 
@@ -130,12 +166,10 @@ func (downloader Downloader) Export(exportDir string) {
 			continue
 		}
 
-		dir := filepath.Join(exportDir, space)
+		dir := filepath.Join(exportDir, space, pathIndex.Filepath(page.Id))
 		if err := os.MkdirAll(dir, 0766); err != nil {
 			log.Panic(err)
 		}
-
-		log.Printf("Export: %s %s (%d/%d)", space, page.Id, inx, len(pages))
 
 		title := page.Title
 		title = strings.ReplaceAll(title, ".", "_")
@@ -143,7 +177,7 @@ func (downloader Downloader) Export(exportDir string) {
 		title = strings.ReplaceAll(title, "\\", "_")
 		filename := filepath.Join(dir, title+".pdf")
 
-		log.Printf("%s", filename)
+		log.Printf("(%d/%d) [page.Id=%s] %s", inx, len(pages), page.Id, filename)
 
 		pdf := downloader.GetPDF(page.Id)
 		err := os.WriteFile(filename, pdf, 0766)
@@ -164,7 +198,6 @@ func (downloader Downloader) Export(exportDir string) {
 			attachmentTitle = strings.ReplaceAll(attachmentTitle, "/", "_")
 			attachmentTitle = strings.ReplaceAll(attachmentTitle, "\\", "_")
 			attachmentFile := filepath.Join(attachmentsDir, attachmentTitle)
-			log.Printf("%s", attachmentFile)
 
 			byt := downloader.GetAttachment(attachment)
 			err = os.WriteFile(attachmentFile, byt, 0766)

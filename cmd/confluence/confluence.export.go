@@ -25,14 +25,27 @@ func main() {
 	}
 
 	downloader.Export(*exportDir)
-	//content := downloader.Content()
-	//
-	//byt, err := json.MarshalIndent(content, "", "  ")
+
+	//results := downloader.Content()
+	//byt, err := json.MarshalIndent(results, "", "  ")
 	//if err != nil {
 	//	log.Panic(err)
 	//}
 	//
-	//err = os.WriteFile("sample/confluence.content.json", byt, 0755)
+	//err = os.WriteFile("sample/confluence.content.json", byt, 0766)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
+
+	//apiUrl, _ := url.Parse(*baseUrl + "/rest/api/content/15368356/child/page")
+	//childPages := downloader.FetchList(apiUrl)
+	//
+	//byt, err := json.MarshalIndent(childPages, "", "  ")
+	//if err != nil {
+	//	log.Panic(err)
+	//}
+	//
+	//err = os.WriteFile("sample/confluence.15368356.child.page.json", byt, 0766)
 	//if err != nil {
 	//	log.Panic(err)
 	//}
