@@ -34,6 +34,10 @@ func (downloader Downloader) request(src *url.URL) (resp *http.Response) {
 		log.Panic(err)
 	}
 
+	if resp.StatusCode != 200 {
+		log.Fatalf("resp.StatusCode=%v", resp.StatusCode)
+	}
+
 	return resp
 }
 
@@ -159,11 +163,6 @@ func (downloader Downloader) Export(exportDir string) {
 
 	for inx, page := range pages {
 		space := strings.TrimPrefix(page.Expandable.Space, "/rest/api/space/")
-
-		if space == "ADMIN" {
-			// Skip confluence sample data
-			continue
-		}
 
 		dir := filepath.Join(exportDir, space, pathIndex.Filepath(page.Id))
 		if err := os.MkdirAll(dir, 0766); err != nil {
