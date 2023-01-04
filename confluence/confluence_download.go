@@ -81,8 +81,7 @@ func (downloader Downloader) Content() (pages []ContentResult) {
 
 func (downloader Downloader) GetPDF(pageId string) (byt []byte) {
 
-	apiUrl, _ := url.Parse(downloader.BaseUrl + "/spaces/flyingpdf/pdfpageexport.action")
-	apiUrl.Query().Set("pageId", pageId)
+	apiUrl, _ := url.Parse(downloader.BaseUrl + "/spaces/flyingpdf/pdfpageexport.action?pageId=" + pageId)
 	resp := downloader.request(apiUrl)
 
 	byt, err := io.ReadAll(resp.Body)
